@@ -288,6 +288,53 @@ body {
   color: var(--ink-muted);
 }
 
+.unit-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.725rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  user-select: none;
+}
+
+.unit-btn {
+  background: transparent;
+  border: none;
+  padding: 0.12rem 0.28rem;
+  font-family: inherit;
+  font-size: inherit;
+  letter-spacing: inherit;
+  color: var(--ink-muted);
+  cursor: pointer;
+  border-radius: 2px;
+  line-height: 1;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.unit-btn:hover {
+  color: var(--ink-primary);
+}
+
+.unit-btn.is-active {
+  color: var(--ink-primary);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
+}
+
+.unit-btn:focus-visible {
+  outline: 2px solid var(--ink-primary);
+  outline-offset: 2px;
+}
+
+.unit-sep {
+  color: var(--rule-input);
+  font-size: 0.7rem;
+}
+
 .parameter-control {
   position: relative;
   display: flex;

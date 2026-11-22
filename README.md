@@ -12,9 +12,11 @@ A lógica de cálculo e classificação do IMC foi desenvolvida manualmente, enq
 
 - Cálculo do IMC com base no peso e na altura.
 - Classificação do resultado de acordo com as faixas de IMC.
+- Seleção de unidade para estatura (centímetros ou metros com conversão automática).
 - Validação dos valores informados.
-- Apresentação visual do resultado.
-- Interface responsiva para diferentes tamanhos de tela.
+- Apresentação visual do resultado com régua linear interativa.
+- Alternância entre temas claro e escuro.
+- Interface responsiva com rolagem suave em dispositivos móveis.
 
 ## Tecnologias utilizadas
 
@@ -27,10 +29,12 @@ A lógica de cálculo e classificação do IMC foi desenvolvida manualmente, enq
 ```text
 calculadora-imc/
 ├── index.html
+├── README.md
 ├── css/
 │   └── style.css
 └── js/
-    └── script.js
+    ├── script.js
+    └── ui.js
 ```
 
 ## Como executar

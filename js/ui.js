@@ -16,6 +16,12 @@
   const errorAltura = document.getElementById("altura-error");
   const btnLimpar = document.getElementById("btn-limpar");
 
+  // Seletor de Unidade de Estatura (Padrão: cm)
+  let activeHeightUnit = "cm";
+  const unitBtnCm = document.getElementById("unit-btn-cm");
+  const unitBtnM = document.getElementById("unit-btn-m");
+  const alturaUnitSuffix = document.getElementById("altura-unit-suffix");
+
   // Elementos do Painel de Leitura (Resultado)
   const readoutColumn = document.querySelector(".readout-column");
   const resultBox = document.getElementById("result-box");
@@ -210,31 +216,165 @@
     activeAnimationId = requestAnimationFrame(frame);
   }
 
-  // Limpa erros ao digitar e bloqueia a digitação de letras nos campos
-  function preventLetterInput(inputEl, fieldEl, errorEl) {
-    // Bloqueia teclas de letras no momento em que são pressionadas
+  /**
+   * Alterna a unidade de estatura (cm / m) e converte o valor atual de forma inteligente
+   */
+  function setHeightUnit(newUnit) {
+    if (newUnit === activeHeightUnit) return;
+
+    const prevUnit = activeHeightUnit;
+    activeHeightUnit = newUnit;
+
+    if (newUnit === "cm") {
+      if (unitBtnCm) {
+        unitBtnCm.classList.add("is-active");
+        unitBtnCm.setAttribute("aria-pressed", "true");
+      }
+      if (unitBtnM) {
+        unitBtnM.classList.remove("is-active");
+        unitBtnM.setAttribute("aria-pressed", "false");
+      }
+      inputAltura.placeholder = "175";
+      if (alturaUnitSuffix) alturaUnitSuffix.textContent = "cm";
+    } else {
+      if (unitBtnM) {
+        unitBtnM.classList.add("is-active");
+        unitBtnM.setAttribute("aria-pressed", "true");
+      }
+      if (unitBtnCm) {
+        unitBtnCm.classList.remove("is-active");
+        unitBtnCm.setAttribute("aria-pressed", "false");
+      }
+      inputAltura.placeholder = "1,75";
+      if (alturaUnitSuffix) alturaUnitSuffix.textContent = "m";
+    }
+
+    // Conversão inteligente do valor existente
+    const rawVal = inputAltura.value.trim();
+    if (rawVal !== "") {
+      const num = parseInputNumber(rawVal);
+      if (Number.isFinite(num) && num > 0) {
+        if (prevUnit === "cm" && newUnit === "m") {
+          const m = num / 100;
+          inputAltura.value = m.toFixed(2).replace(".", ",");
+        } else if (prevUnit === "m" && newUnit === "cm") {
+          const cm = Math.round(num * 100);
+          inputAltura.value = cm.toString();
+        }
+      }
+    }
+
+    if (fieldAltura.classList.contains("has-error")) {
+      clearFieldError(fieldAltura, errorAltura, inputAltura);
+    }
+  }
+
+  if (unitBtnCm && unitBtnM) {
+    unitBtnCm.addEventListener("click", function () {
+      setHeightUnit("cm");
+    });
+    unitBtnM.addEventListener("click", function () {
+      setHeightUnit("m");
+    });
+  }
+
+  /**
+   * Sanitiza strings numéricas permitindo apenas dígitos e no máximo um separador decimal
+   */
+  function sanitizeNumericString(val) {
+    if (typeof val !== "string") return "";
+    let cleaned = val.replace(/[^\d.,]/g, "");
+
+    let hasSeparator = false;
+    let result = "";
+    for (let i = 0; i < cleaned.length; i++) {
+      const ch = cleaned[i];
+      if (ch === "." || ch === ",") {
+        if (!hasSeparator) {
+          hasSeparator = true;
+          result += ch;
+        }
+      } else {
+        result += ch;
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Configura filtro estrito de entrada para inputs numéricos
+   * Permite: 0-9, um único separador decimal (, ou .), teclas funcionais e atalhos de sistema
+   * Bloqueia: letras, símbolos especiais e caracteres inválidos
+   */
+  function setupNumericInputSanitizer(inputEl, fieldEl, errorEl) {
+    // 1. Interceptação durante a digitação
     inputEl.addEventListener("keydown", function (event) {
+      // Permite atalhos com Ctrl, Meta/Cmd ou Alt (ex.: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+Z)
       if (event.ctrlKey || event.metaKey || event.altKey) {
         return;
       }
-      if (event.key.length === 1 && /\p{L}/u.test(event.key)) {
-        event.preventDefault();
+
+      // Teclas funcionais de controle e navegação permitidas
+      const allowedKeys = [
+        "Backspace", "Delete", "Tab", "Enter", "Escape",
+        "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown",
+        "Home", "End"
+      ];
+      if (allowedKeys.includes(event.key)) {
+        return;
       }
+
+      // Algarismos de 0 a 9 permitidos
+      if (/^[0-9]$/.test(event.key)) {
+        return;
+      }
+
+      // Separador decimal (, ou .) permitido se ainda não houver um no valor
+      // ou se o separador existente fizer parte da seleção que será substituída
+      if (event.key === "," || event.key === ".") {
+        const val = inputEl.value;
+        const selStart = inputEl.selectionStart || 0;
+        const selEnd = inputEl.selectionEnd || 0;
+        const selectedText = val.substring(selStart, selEnd);
+
+        const hasSep = val.includes(",") || val.includes(".");
+        const sepInSelection = selectedText.includes(",") || selectedText.includes(".");
+
+        if (!hasSep || sepInSelection) {
+          return;
+        }
+      }
+
+      // Qualquer outro caractere (letras, símbolos @#$, espaço, etc.) é bloqueado
+      event.preventDefault();
     });
 
-    // Bloqueia inserção de letras via IME, teclado virtual mobile ou colagem
-    inputEl.addEventListener("beforeinput", function (event) {
-      if (typeof event.data === "string" && /\p{L}/u.test(event.data)) {
-        event.preventDefault();
-      }
+    // 2. Interceptação de colagem (paste)
+    inputEl.addEventListener("paste", function (event) {
+      event.preventDefault();
+      const pasteText = (event.clipboardData || window.clipboardData).getData("text") || "";
+      const current = inputEl.value;
+      const start = inputEl.selectionStart || 0;
+      const end = inputEl.selectionEnd || 0;
+
+      const combined = current.substring(0, start) + pasteText + current.substring(end);
+      const cleaned = sanitizeNumericString(combined);
+
+      inputEl.value = cleaned;
+      const insertedLen = sanitizeNumericString(pasteText).length;
+      const newPos = Math.min(cleaned.length, start + insertedLen);
+      inputEl.setSelectionRange(newPos, newPos);
+
+      inputEl.dispatchEvent(new Event("input", { bubbles: true }));
     });
 
-    // Fallback de sanitização caso alguma letra seja inserida e limpeza do estado de erro
+    // 3. Fallback de sanitização para teclado virtual, preenchimento automático e drag-and-drop
     inputEl.addEventListener("input", function () {
-      if (/\p{L}/u.test(inputEl.value)) {
+      const original = inputEl.value;
+      const cleaned = sanitizeNumericString(original);
+      if (original !== cleaned) {
         const cursor = inputEl.selectionStart;
-        const cleaned = inputEl.value.replace(/\p{L}+/gu, "");
-        const diff = inputEl.value.length - cleaned.length;
+        const diff = original.length - cleaned.length;
         inputEl.value = cleaned;
         if (typeof cursor === "number") {
           const newPos = Math.max(0, cursor - diff);
@@ -248,8 +388,8 @@
     });
   }
 
-  preventLetterInput(inputPeso, fieldPeso, errorPeso);
-  preventLetterInput(inputAltura, fieldAltura, errorAltura);
+  setupNumericInputSanitizer(inputPeso, fieldPeso, errorPeso);
+  setupNumericInputSanitizer(inputAltura, fieldAltura, errorAltura);
 
   /**
    * Rola suavemente até a seção de resultado em dispositivos móveis
@@ -282,33 +422,69 @@
     clearFieldError(fieldAltura, errorAltura, inputAltura);
 
     const peso = parseInputNumber(inputPeso.value);
-    const altura = parseInputNumber(inputAltura.value);
-
-    // Validação individual usando a própria função calcularIMC de js/script.js
-    const checkPeso = calcularIMC(peso, 1.75);
-    const checkAltura = calcularIMC(70, altura);
+    const alturaInput = parseInputNumber(inputAltura.value);
 
     let hasValidationError = false;
     let firstInvalidField = null;
 
-    if (checkPeso === "Peso inválido.") {
-      setFieldError(fieldPeso, errorPeso, inputPeso, checkPeso + " Informe um valor positivo em kg.");
+    // 1. Validação do Peso
+    if (!Number.isFinite(peso) || peso <= 0) {
+      setFieldError(fieldPeso, errorPeso, inputPeso, "Peso inválido. Informe um valor positivo em kg.");
+      hasValidationError = true;
+      firstInvalidField = inputPeso;
+    } else if (peso < 10 || peso > 500) {
+      setFieldError(fieldPeso, errorPeso, inputPeso, "Peso inválido. Informe um valor realista entre 10 e 500 kg.");
       hasValidationError = true;
       firstInvalidField = inputPeso;
     }
 
-    if (checkAltura === "Altura inválida.") {
-      setFieldError(fieldAltura, errorAltura, inputAltura, checkAltura + " Informe sua estatura em metros (ex: 1,75).");
+    // 2. Validação da Estatura conforme a unidade selecionada (cm ou m)
+    let alturaMetros = NaN;
+
+    if (!Number.isFinite(alturaInput) || alturaInput <= 0) {
+      const hint = activeHeightUnit === "cm"
+        ? "Informe sua estatura em centímetros (ex: 175)."
+        : "Informe sua estatura em metros (ex: 1,75).";
+      setFieldError(fieldAltura, errorAltura, inputAltura, "Altura inválida. " + hint);
       hasValidationError = true;
       if (!firstInvalidField) {
         firstInvalidField = inputAltura;
       }
+    } else {
+      if (activeHeightUnit === "cm") {
+        if (alturaInput < 50 || alturaInput > 260) {
+          setFieldError(fieldAltura, errorAltura, inputAltura, "Altura inválida. Informe um valor realista entre 50 e 260 cm.");
+          hasValidationError = true;
+          if (!firstInvalidField) {
+            firstInvalidField = inputAltura;
+          }
+        } else {
+          alturaMetros = alturaInput / 100;
+        }
+      } else {
+        if (alturaInput < 0.50 || alturaInput > 2.60) {
+          setFieldError(fieldAltura, errorAltura, inputAltura, "Altura inválida. Informe um valor realista entre 0,50 e 2,60 m.");
+          hasValidationError = true;
+          if (!firstInvalidField) {
+            firstInvalidField = inputAltura;
+          }
+        } else {
+          alturaMetros = alturaInput;
+        }
+      }
     }
 
-    // Chamada principal à função original de js/script.js
-    const resultado = calcularIMC(peso, altura);
+    if (hasValidationError) {
+      if (firstInvalidField) {
+        firstInvalidField.focus();
+      }
+      return;
+    }
 
-    if (resultado === "Peso inválido." || resultado === "Altura inválida." || hasValidationError) {
+    // 3. Chamada à função calcularIMC() original com altura sempre convertida em metros
+    const resultado = calcularIMC(peso, alturaMetros);
+
+    if (resultado === "Peso inválido." || resultado === "Altura inválida.") {
       if (resultado === "Peso inválido." && !fieldPeso.classList.contains("has-error")) {
         setFieldError(fieldPeso, errorPeso, inputPeso, resultado);
         firstInvalidField = firstInvalidField || inputPeso;
@@ -386,6 +562,9 @@
 
     previousImcNumeric = null;
     btnLimpar.hidden = true;
+
+    // Restaura a unidade de estatura para o padrão (cm)
+    setHeightUnit("cm");
 
     resultBox.setAttribute("data-state", "idle");
     resultBox.removeAttribute("data-tier");
