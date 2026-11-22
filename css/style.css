@@ -1,0 +1,935 @@
+/* ==========================================================================
+   IMC Calculator — Editorial & Swiss-Precision Product Design
+   ========================================================================== */
+
+:root,
+[data-theme="light"] {
+  /* Paleta Editorial Quente (Warm Alabaster & Carbon Ink) */
+  --bg-page: #f6f5f2;
+  --bg-panel: #ffffff;
+  --bg-subtle: #efede8;
+  --bg-active-row: #eae7e0;
+
+  /* Tipografia */
+  --ink-primary: #141413;
+  --ink-secondary: #52514e;
+  --ink-muted: #85837e;
+  --ink-placeholder: #b5b3ad;
+
+  /* Linhas & Divisores Estruturais */
+  --rule-hairline: #e2dfd9;
+  --rule-strong: #141413;
+  --rule-input: #c9c6be;
+
+  /* Botão Principal */
+  --btn-bg: #141413;
+  --btn-text: #f6f5f2;
+  --btn-hover: #2c2c2a;
+
+  /* Cores de Classificação (Tons Clínicos Sóbrios) */
+  --tier-underweight: #2b6cb0;
+  --tier-normal: #1b7a58;
+  --tier-overweight: #b76e14;
+  --tier-obesity-1: #c8521b;
+  --tier-obesity-2: #b83227;
+  --tier-obesity-3: #8c1d35;
+
+  /* Estado de Erro */
+  --error-ink: #b83227;
+}
+
+[data-theme="dark"] {
+  --bg-page: #0e0e0d;
+  --bg-panel: #151514;
+  --bg-subtle: #1c1c1a;
+  --bg-active-row: #22221f;
+
+  --ink-primary: #f2f0eb;
+  --ink-secondary: #a3a19a;
+  --ink-muted: #6e6c66;
+  --ink-placeholder: #474642;
+
+  --rule-hairline: #262624;
+  --rule-strong: #f2f0eb;
+  --rule-input: #383734;
+
+  --btn-bg: #f2f0eb;
+  --btn-text: #0e0e0d;
+  --btn-hover: #dad7cf;
+
+  --tier-underweight: #63b3ed;
+  --tier-normal: #38b288;
+  --tier-overweight: #ecc94b;
+  --tier-obesity-1: #ed8936;
+  --tier-obesity-2: #f56565;
+  --tier-obesity-3: #ed64a6;
+
+  --error-ink: #f56565;
+}
+
+:root {
+  --font-serif: "Instrument Serif", Georgia, "Times New Roman", serif;
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+
+  --ease-editorial: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ==========================================================================
+   Reset & Fundamentos
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-page);
+  color: var(--ink-primary);
+  line-height: 1.5;
+  min-height: 100vh;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.page-frame {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 2.5rem;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Rótulo de Indexação Editorial (01, 02, 03) */
+.index-tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.725rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-muted);
+}
+
+/* ==========================================================================
+   1. Header Editorial
+   ========================================================================== */
+
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 0;
+  border-bottom: 1px solid var(--rule-hairline);
+}
+
+.header-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  color: var(--ink-primary);
+}
+
+.brand-mark {
+  display: block;
+  flex-shrink: 0;
+}
+
+.brand-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.header-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--ink-secondary);
+}
+
+.meta-sep {
+  color: var(--rule-input);
+  user-select: none;
+}
+
+.theme-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: transparent;
+  border: 1px solid var(--rule-hairline);
+  border-radius: 3px;
+  padding: 0.25rem 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.725rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-primary);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.theme-switch:hover {
+  border-color: var(--ink-primary);
+  background-color: var(--bg-subtle);
+}
+
+.theme-switch:focus-visible {
+  outline: 2px solid var(--ink-primary);
+  outline-offset: 2px;
+}
+
+.theme-switch-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--ink-primary);
+}
+
+/* ==========================================================================
+   2. Masthead (Abertura Editorial)
+   ========================================================================== */
+
+.editorial-main {
+  flex: 1;
+}
+
+.masthead {
+  display: grid;
+  grid-template-columns: 5fr 7fr;
+  gap: 3rem;
+  align-items: end;
+  padding: 3.25rem 0 2.5rem;
+  border-bottom: 1px solid var(--rule-hairline);
+}
+
+.masthead-left .index-tag {
+  margin-bottom: 0.625rem;
+}
+
+.masthead h1 {
+  font-family: var(--font-serif);
+  font-size: clamp(2.5rem, 4.5vw, 3.625rem);
+  font-weight: 400;
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  color: var(--ink-primary);
+}
+
+.lead-copy {
+  font-size: 1rem;
+  color: var(--ink-secondary);
+  max-width: 52ch;
+  line-height: 1.6;
+}
+
+/* ==========================================================================
+   3. Grid Assimétrico: Formulário (5 col) & Resultado (7 col)
+   ========================================================================== */
+
+.workspace-grid {
+  display: grid;
+  grid-template-columns: 5fr 7fr;
+  border-bottom: 1px solid var(--rule-hairline);
+}
+
+/* Coluna de Entrada */
+.input-column {
+  padding: 2.75rem 3rem 2.75rem 0;
+  border-right: 1px solid var(--rule-hairline);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2.25rem;
+}
+
+.parameter-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.875rem;
+  margin-bottom: 2.25rem;
+}
+
+.parameter-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.parameter-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.parameter-header label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink-primary);
+}
+
+.parameter-unit-label {
+  font-family: var(--font-mono);
+  font-size: 0.725rem;
+  color: var(--ink-muted);
+}
+
+.parameter-control {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  border-bottom: 1.5px solid var(--rule-input);
+  transition: border-color 0.18s ease;
+}
+
+.parameter-control:hover {
+  border-bottom-color: var(--ink-secondary);
+}
+
+.parameter-control:focus-within {
+  border-bottom-color: var(--rule-strong);
+}
+
+.parameter-control input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0.5rem 2.5rem 0.625rem 0;
+  font-family: var(--font-mono);
+  font-size: 1.75rem;
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-primary);
+}
+
+.parameter-control input::placeholder {
+  color: var(--ink-placeholder);
+}
+
+.unit-suffix {
+  position: absolute;
+  right: 0;
+  bottom: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--ink-muted);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Validação Visual */
+.parameter-item.has-error .parameter-control {
+  border-bottom-color: var(--error-ink);
+}
+
+.field-error {
+  font-size: 0.78125rem;
+  color: var(--error-ink);
+  min-height: 1.15rem;
+  margin-top: 0.4rem;
+  line-height: 1.35;
+}
+
+/* Botões */
+.action-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.btn-calculate {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 3.125rem;
+  padding: 0 1.25rem;
+  background-color: var(--btn-bg);
+  color: var(--btn-text);
+  border: 1px solid var(--btn-bg);
+  border-radius: 3px;
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.btn-calculate:hover {
+  background-color: var(--btn-hover);
+}
+
+.btn-calculate:active {
+  transform: translateY(1px);
+}
+
+.btn-calculate svg {
+  transition: transform 0.2s var(--ease-editorial);
+}
+
+.btn-calculate:hover svg {
+  transform: translateX(3px);
+}
+
+.btn-calculate:focus-visible,
+.btn-reset:focus-visible {
+  outline: 2px solid var(--ink-primary);
+  outline-offset: 2px;
+}
+
+.btn-reset {
+  height: 3.125rem;
+  padding: 0 1rem;
+  background-color: transparent;
+  color: var(--ink-secondary);
+  border: 1px solid var(--rule-input);
+  border-radius: 3px;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+}
+
+.btn-reset:hover {
+  border-color: var(--ink-primary);
+  color: var(--ink-primary);
+  background-color: var(--bg-subtle);
+}
+
+.btn-reset[hidden] {
+  display: none;
+}
+
+.formula-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rule-hairline);
+  font-size: 0.78125rem;
+}
+
+.formula-label {
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+}
+
+.formula-expression {
+  font-family: var(--font-mono);
+  font-size: 0.78125rem;
+  color: var(--ink-secondary);
+}
+
+/* ==========================================================================
+   Coluna 02: Painel de Leitura (Resultado)
+   ========================================================================== */
+
+.readout-column {
+  padding: 2.75rem 0 2.75rem 3rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.readout-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.readout-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.status-tag {
+  font-family: var(--font-mono);
+  font-size: 0.725rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+  padding: 0.2rem 0.55rem;
+  border: 1px solid var(--rule-hairline);
+  border-radius: 2px;
+}
+
+.readout-container[data-state="active"] .status-tag {
+  color: var(--ink-primary);
+  border-color: var(--rule-input);
+  background-color: var(--bg-subtle);
+}
+
+/* Display Numérico Protagonista */
+.readout-display {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+.metric-figure {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.imc-number {
+  font-family: var(--font-serif);
+  font-size: clamp(4.25rem, 7vw, 6.25rem);
+  font-weight: 400;
+  line-height: 0.92;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-muted);
+  transition: color 0.25s ease;
+}
+
+.readout-container[data-state="active"] .imc-number {
+  color: var(--ink-primary);
+}
+
+.imc-unit {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  color: var(--ink-muted);
+  font-weight: 400;
+}
+
+.imc-unit[hidden] {
+  display: none;
+}
+
+.classification-block {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-height: 1.75rem;
+}
+
+.classification-indicator {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background-color: var(--rule-input);
+  flex-shrink: 0;
+  transition: background-color 0.25s ease, transform 0.25s var(--ease-editorial);
+}
+
+.classification-name {
+  font-size: 1.125rem;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  color: var(--ink-secondary);
+  transition: color 0.25s ease;
+}
+
+.readout-container[data-state="active"] .classification-name {
+  color: var(--ink-primary);
+  font-weight: 600;
+}
+
+/* Cores Semânticas do Indicador por Classificação */
+.readout-container[data-tier="underweight"] .classification-indicator {
+  background-color: var(--tier-underweight);
+}
+.readout-container[data-tier="underweight"] .classification-name {
+  color: var(--tier-underweight);
+}
+
+.readout-container[data-tier="normal"] .classification-indicator {
+  background-color: var(--tier-normal);
+}
+.readout-container[data-tier="normal"] .classification-name {
+  color: var(--tier-normal);
+}
+
+.readout-container[data-tier="overweight"] .classification-indicator {
+  background-color: var(--tier-overweight);
+}
+.readout-container[data-tier="overweight"] .classification-name {
+  color: var(--tier-overweight);
+}
+
+.readout-container[data-tier="obesity-1"] .classification-indicator {
+  background-color: var(--tier-obesity-1);
+}
+.readout-container[data-tier="obesity-1"] .classification-name {
+  color: var(--tier-obesity-1);
+}
+
+.readout-container[data-tier="obesity-2"] .classification-indicator {
+  background-color: var(--tier-obesity-2);
+}
+.readout-container[data-tier="obesity-2"] .classification-name {
+  color: var(--tier-obesity-2);
+}
+
+.readout-container[data-tier="obesity-3"] .classification-indicator {
+  background-color: var(--tier-obesity-3);
+}
+.readout-container[data-tier="obesity-3"] .classification-name {
+  color: var(--tier-obesity-3);
+}
+
+/* Régua Linear de Precisão */
+.linear-ruler {
+  padding: 1.25rem 0 0.5rem;
+  border-top: 1px solid var(--rule-hairline);
+}
+
+.ruler-zones {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 3px;
+  height: 6px;
+  margin-bottom: 0.75rem;
+}
+
+.zone {
+  display: block;
+  height: 100%;
+  opacity: 0.35;
+  transition: opacity 0.25s ease;
+}
+
+.readout-container[data-state="active"] .zone {
+  opacity: 0.85;
+}
+
+.zone-underweight { background-color: var(--tier-underweight); }
+.zone-normal { background-color: var(--tier-normal); }
+.zone-overweight { background-color: var(--tier-overweight); }
+.zone-obesity-1 { background-color: var(--tier-obesity-1); }
+.zone-obesity-2 { background-color: var(--tier-obesity-2); }
+.zone-obesity-3 { background-color: var(--tier-obesity-3); }
+
+/* Agulha / Marcador da Régua */
+.ruler-needle {
+  position: absolute;
+  top: -7px;
+  left: 0%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  opacity: 0;
+  transition: left 0.55s var(--ease-editorial), opacity 0.25s ease;
+  pointer-events: none;
+}
+
+.readout-container[data-state="active"] .ruler-needle {
+  opacity: 1;
+}
+
+.needle-head {
+  width: 7px;
+  height: 7px;
+  background-color: var(--ink-primary);
+  transform: rotate(45deg);
+  margin-bottom: 1px;
+}
+
+.needle-line {
+  width: 1.5px;
+  height: 14px;
+  background-color: var(--ink-primary);
+}
+
+.ruler-axis {
+  position: relative;
+  height: 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.axis-tick {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+}
+
+.axis-tick:first-child {
+  transform: translateX(0);
+}
+
+.axis-tick:last-child {
+  transform: translateX(-100%);
+}
+
+.readout-interpretation {
+  font-size: 0.90625rem;
+  color: var(--ink-secondary);
+  line-height: 1.65;
+  max-width: 60ch;
+}
+
+/* ==========================================================================
+   4. Seção de Referência Clínica (Tabela Editorial)
+   ========================================================================== */
+
+.reference-section {
+  padding: 3.25rem 0;
+}
+
+.reference-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.75rem;
+}
+
+.reference-title-group .index-tag {
+  margin-bottom: 0.375rem;
+}
+
+.reference-title-group h2 {
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  color: var(--ink-primary);
+}
+
+.reference-subtitle {
+  font-size: 0.875rem;
+  color: var(--ink-secondary);
+}
+
+.table-wrapper {
+  border-top: 1.5px solid var(--rule-strong);
+  border-bottom: 1px solid var(--rule-hairline);
+  overflow-x: auto;
+}
+
+.reference-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.875rem;
+}
+
+.reference-table th {
+  font-family: var(--font-mono);
+  font-size: 0.725rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--rule-hairline);
+}
+
+.reference-table th:first-child,
+.reference-table td:first-child {
+  padding-left: 0.5rem;
+}
+
+.reference-table td {
+  padding: 0.9375rem 1rem;
+  border-bottom: 1px solid var(--rule-hairline);
+  color: var(--ink-primary);
+  transition: background-color 0.15s ease;
+}
+
+.reference-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.reference-table tbody tr:hover td {
+  background-color: var(--bg-subtle);
+}
+
+.cell-code {
+  font-family: var(--font-mono);
+  font-size: 0.78125rem;
+  color: var(--ink-muted);
+  width: 70px;
+}
+
+.cell-range {
+  font-family: var(--font-mono);
+  font-size: 0.84375rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-secondary);
+  white-space: nowrap;
+  width: 200px;
+}
+
+.cell-class {
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 190px;
+}
+
+.cell-note {
+  color: var(--ink-secondary);
+  font-size: 0.84375rem;
+}
+
+.tier-swatch {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.swatch-underweight { background-color: var(--tier-underweight); }
+.swatch-normal { background-color: var(--tier-normal); }
+.swatch-overweight { background-color: var(--tier-overweight); }
+.swatch-obesity-1 { background-color: var(--tier-obesity-1); }
+.swatch-obesity-2 { background-color: var(--tier-obesity-2); }
+.swatch-obesity-3 { background-color: var(--tier-obesity-3); }
+
+/* Linha ativa correspondente ao resultado calculado */
+.reference-table tbody tr.is-active td {
+  background-color: var(--bg-active-row);
+}
+
+.reference-table tbody tr.is-active .cell-code,
+.reference-table tbody tr.is-active .cell-range,
+.reference-table tbody tr.is-active .cell-class {
+  color: var(--ink-primary);
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   5. Footer
+   ========================================================================== */
+
+.site-footer {
+  margin-top: auto;
+  padding: 1.75rem 0 2.25rem;
+  border-top: 1px solid var(--rule-hairline);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.footer-disclaimer {
+  font-size: 0.78125rem;
+  color: var(--ink-muted);
+  max-width: 72ch;
+  line-height: 1.6;
+}
+
+.footer-ref {
+  font-family: var(--font-mono);
+  font-size: 0.725rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   Acessibilidade: Redução de Movimento
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ==========================================================================
+   Responsividade (Tablets & Mobile)
+   ========================================================================== */
+
+@media (max-width: 900px) {
+  .page-frame {
+    padding: 0 1.5rem;
+  }
+
+  .masthead {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 2.25rem 0 2rem;
+  }
+
+  .workspace-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .input-column {
+    padding: 2rem 0;
+    border-right: none;
+    border-bottom: 1px solid var(--rule-hairline);
+  }
+
+  .readout-column {
+    padding: 2.25rem 0;
+  }
+}
+
+@media (max-width: 580px) {
+  .page-frame {
+    padding: 0 1.125rem;
+  }
+
+  .meta-label,
+  .meta-sep {
+    display: none;
+  }
+
+  .action-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-calculate,
+  .btn-reset {
+    width: 100%;
+  }
+
+  .col-note,
+  .cell-note {
+    display: none;
+  }
+
+  .reference-table th,
+  .reference-table td {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .site-footer {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+}

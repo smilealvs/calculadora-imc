@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Calculadora de Índice de Massa Corporal (IMC) com referência antropométrica segundo a Organização Mundial da Saúde.">
+  <title>IMC Calculator — Índice de Massa Corporal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem("imc-theme");
+        var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+        var theme = saved || (prefersDark ? "dark" : "light");
+        document.documentElement.setAttribute("data-theme", theme);
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page-frame">
+    <!-- 1. Header Editorial Compacto -->
+    <header class="site-header">
+      <div class="header-brand">
+        <svg class="brand-mark" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <rect x="1" y="1" width="14" height="14" stroke="currentColor" stroke-width="1.5"/>
+          <line x1="1" y1="11" x2="15" y2="11" stroke="currentColor" stroke-width="1.2"/>
+          <line x1="8" y1="1" x2="8" y2="11" stroke="currentColor" stroke-width="1.2"/>
+        </svg>
+        <span class="brand-title">IMC Calculator</span>
+      </div>
+
+      <div class="header-meta">
+        <span class="meta-label">Índice de Massa Corporal</span>
+        <span class="meta-sep" aria-hidden="true">/</span>
+        <button
+          type="button"
+          class="theme-switch"
+          id="theme-toggle"
+          aria-label="Alternar entre tema claro e escuro"
+        >
+          <span class="theme-switch-dot" aria-hidden="true"></span>
+          <span class="theme-switch-text" id="theme-label">Luz</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- 2. Composição Principal -->
+    <main class="editorial-main">
+      <!-- Cabeçalho de Seção / Masthead -->
+      <section class="masthead" aria-labelledby="page-title">
+        <div class="masthead-left">
+          <span class="index-tag">01 — Cálculo</span>
+          <h1 id="page-title">Calcule seu IMC</h1>
+        </div>
+        <div class="masthead-right">
+          <p class="lead-copy">
+            Relação entre massa corporal e estatura utilizada como parâmetro inicial de triagem nutricional em adultos.
+          </p>
+        </div>
+      </section>
+
+      <!-- Grid Assimétrico: Entrada (Esquerda) & Leitura / Resultado (Direita) -->
+      <div class="workspace-grid">
+        <!-- Coluna 01: Formulário de Entrada -->
+        <section class="input-column" aria-label="Parâmetros corporais">
+          <form id="imc-form" novalidate>
+            <div class="parameter-list">
+              <!-- Parâmetro: Peso -->
+              <div class="parameter-item" id="field-peso">
+                <div class="parameter-header">
+                  <label for="peso">Peso corporal</label>
+                  <span class="parameter-unit-label">Quilogramas (kg)</span>
+                </div>
+                <div class="parameter-control">
+                  <input
+                    type="text"
+                    inputmode="decimal"
+                    id="peso"
+                    name="peso"
+                    placeholder="70,5"
+                    autocomplete="off"
+                    aria-describedby="peso-error"
+                    required
+                  >
+                  <span class="unit-suffix" aria-hidden="true">kg</span>
+                </div>
+                <span class="field-error" id="peso-error" role="alert"></span>
+              </div>
+
+              <!-- Parâmetro: Altura -->
+              <div class="parameter-item" id="field-altura">
+                <div class="parameter-header">
+                  <label for="altura">Estatura</label>
+                  <span class="parameter-unit-label">Metros (m)</span>
+                </div>
+                <div class="parameter-control">
+                  <input
+                    type="text"
+                    inputmode="decimal"
+                    id="altura"
+                    name="altura"
+                    placeholder="1,75"
+                    autocomplete="off"
+                    aria-describedby="altura-error"
+                    required
+                  >
+                  <span class="unit-suffix" aria-hidden="true">m</span>
+                </div>
+                <span class="field-error" id="altura-error" role="alert"></span>
+              </div>
+            </div>
+
+            <div class="action-bar">
+              <button type="submit" class="btn-calculate" id="btn-calcular">
+                <span>Calcular IMC</span>
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+                </svg>
+              </button>
+
+              <button type="button" class="btn-reset" id="btn-limpar" hidden>
+                Limpar dados
+              </button>
+            </div>
+          </form>
+
+          <div class="formula-note">
+            <span class="formula-label">Equação</span>
+            <code class="formula-expression">IMC = peso (kg) ÷ altura² (m)</code>
+          </div>
+        </section>
+
+        <!-- Coluna 02: Painel de Leitura (Resultado + Régua Linear) -->
+        <section class="readout-column" aria-live="polite">
+          <div class="readout-container" id="result-box" data-state="idle">
+            <div class="readout-top-bar">
+              <span class="index-tag">02 — Resultado</span>
+              <span class="status-tag" id="readout-status">Aguardando medidas</span>
+            </div>
+
+            <!-- Valor Principal Tipográfico -->
+            <div class="readout-display">
+              <div class="metric-figure">
+                <output class="imc-number" id="result-imc" for="peso altura">—</output>
+                <span class="imc-unit" id="result-unit" hidden>kg/m²</span>
+              </div>
+
+              <div class="classification-block" id="classification-block">
+                <span class="classification-indicator" id="classification-dot" aria-hidden="true"></span>
+                <span class="classification-name" id="result-classification-text">
+                  Informe peso e altura ao lado para calcular seu índice.
+                </span>
+              </div>
+            </div>
+
+            <!-- Régua Linear de Precisão (15 a 45 kg/m²) -->
+            <div class="linear-ruler" id="linear-ruler" aria-hidden="true">
+              <div class="ruler-zones">
+                <span class="zone zone-underweight" title="Abaixo de 18,5"></span>
+                <span class="zone zone-normal" title="18,5 a 24,9"></span>
+                <span class="zone zone-overweight" title="25,0 a 29,9"></span>
+                <span class="zone zone-obesity-1" title="30,0 a 34,9"></span>
+                <span class="zone zone-obesity-2" title="35,0 a 39,9"></span>
+                <span class="zone zone-obesity-3" title="40,0 ou mais"></span>
+
+                <!-- Agulha de Posição -->
+                <div class="ruler-needle" id="spectrum-marker" style="left: 0%;">
+                  <span class="needle-head"></span>
+                  <span class="needle-line"></span>
+                </div>
+              </div>
+
+              <div class="ruler-axis">
+                <span class="axis-tick" style="left: 0%;">14</span>
+                <span class="axis-tick" style="left: 16.67%;">18,5</span>
+                <span class="axis-tick" style="left: 33.33%;">25</span>
+                <span class="axis-tick" style="left: 50%;">30</span>
+                <span class="axis-tick" style="left: 66.67%;">35</span>
+                <span class="axis-tick" style="left: 83.33%;">40</span>
+                <span class="axis-tick" style="left: 100%;">46</span>
+              </div>
+            </div>
+
+            <!-- Interpretação Contextual -->
+            <p class="readout-interpretation" id="result-message">
+              O resultado e a posição correspondente na escala da Organização Mundial da Saúde serão exibidos aqui imediatamente após o cálculo.
+            </p>
+          </div>
+        </section>
+      </div>
+
+      <!-- 3. Informações Adicionais: Tabela de Referência OMS -->
+      <section class="reference-section" aria-labelledby="ref-heading">
+        <div class="reference-header">
+          <div class="reference-title-group">
+            <span class="index-tag">03 — Referência Clínica</span>
+            <h2 id="ref-heading">Classificações do IMC</h2>
+          </div>
+          <p class="reference-subtitle">
+            Intervalos padronizados para adultos (20 a 60 anos) segundo diretrizes da OMS.
+          </p>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="reference-table">
+            <thead>
+              <tr>
+                <th scope="col" class="col-code">Nível</th>
+                <th scope="col" class="col-range">Intervalo (kg/m²)</th>
+                <th scope="col" class="col-class">Classificação</th>
+                <th scope="col" class="col-note">Observação de Triagem</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-tier="underweight">
+                <td class="cell-code">I</td>
+                <td class="cell-range">Abaixo de 18,5</td>
+                <td class="cell-class">
+                  <span class="tier-swatch swatch-underweight" aria-hidden="true"></span>
+                  <span>Abaixo do peso</span>
+                </td>
+                <td class="cell-note">Baixa reserva ponderal em relação à estatura</td>
+              </tr>
+              <tr data-tier="normal">
+                <td class="cell-code">II</td>
+                <td class="cell-range">18,5 até 24,9</td>
+                <td class="cell-class">
+                  <span class="tier-swatch swatch-normal" aria-hidden="true"></span>
+                  <span>Peso adequado</span>
+                </td>
+                <td class="cell-note">Faixa de referência associada ao equilíbrio ponderal</td>
+              </tr>
+              <tr data-tier="overweight">
+                <td class="cell-code">III</td>
+                <td class="cell-range">25,0 até 29,9</td>
+                <td class="cell-class">
+                  <span class="tier-swatch swatch-overweight" aria-hidden="true"></span>
+                  <span>Sobrepeso</span>
+                </td>
+                <td class="cell-note">Acima do intervalo padrão; requer análise de composição</td>
+              </tr>
+              <tr data-tier="obesity-1">
+                <td class="cell-code">IV</td>
+                <td class="cell-range">30,0 até 34,9</td>
+                <td class="cell-class">
+                  <span class="tier-swatch swatch-obesity-1" aria-hidden="true"></span>
+                  <span>Obesidade grau I</span>
+                </td>
+                <td class="cell-note">Indicação de avaliação clínica e nutricional</td>
+              </tr>
+              <tr data-tier="obesity-2">
+                <td class="cell-code">V</td>
+                <td class="cell-range">35,0 até 39,9</td>
+                <td class="cell-class">
+                  <span class="tier-swatch swatch-obesity-2" aria-hidden="true"></span>
+                  <span>Obesidade grau II</span>
+                </td>
+                <td class="cell-note">Indicação de acompanhamento multiprofissional</td>
+              </tr>
+              <tr data-tier="obesity-3">
+                <td class="cell-code">VI</td>
+                <td class="cell-range">40,0 ou mais</td>
+                <td class="cell-class">
+                  <span class="tier-swatch swatch-obesity-3" aria-hidden="true"></span>
+                  <span>Obesidade grau III</span>
+                </td>
+                <td class="cell-note">Prioridade para acompanhamento médico especializado</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <!-- 4. Footer Minimalista -->
+    <footer class="site-footer">
+      <p class="footer-disclaimer">
+        O IMC é uma ferramenta de avaliação geral e não substitui uma avaliação profissional. Atletas, idosos, gestantes e indivíduos com elevada massa muscular podem apresentar variações que exigem exame de composição corporal.
+      </p>
+      <span class="footer-ref">OMS / WHO Anthropometric Reference</span>
+    </footer>
+  </div>
+
+  <!-- REGRA OBRIGATÓRIA: Script original preservado integralmente -->
+  <script src="js/script.js"></script>
+  <!-- Camada de Interface e Experiência -->
+  <script src="js/ui.js"></script>
+</body>
+</html>
