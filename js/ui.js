@@ -17,6 +17,7 @@
   const btnLimpar = document.getElementById("btn-limpar");
 
   // Elementos do Painel de Leitura (Resultado)
+  const readoutColumn = document.querySelector(".readout-column");
   const resultBox = document.getElementById("result-box");
   const readoutStatus = document.getElementById("readout-status");
   const resultImc = document.getElementById("result-imc");
@@ -251,6 +252,27 @@
   preventLetterInput(inputAltura, fieldAltura, errorAltura);
 
   /**
+   * Rola suavemente até a seção de resultado em dispositivos móveis
+   */
+  function scrollToResultOnMobile() {
+    const isMobile = window.matchMedia
+      ? window.matchMedia("(max-width: 900px)").matches
+      : window.innerWidth <= 900;
+
+    if (!isMobile) return;
+
+    const target = readoutColumn || resultBox;
+    if (!target) return;
+
+    requestAnimationFrame(function () {
+      target.scrollIntoView({
+        behavior: prefersReducedMotion() ? "auto" : "smooth",
+        block: "start"
+      });
+    });
+  }
+
+  /**
    * Submissão do Formulário integrada a calcularIMC(peso, altura) de js/script.js
    */
   form.addEventListener("submit", function (event) {
@@ -344,6 +366,8 @@
       resultClassificationText.textContent = "";
       resultMessage.textContent = "";
     }
+
+    scrollToResultOnMobile();
   });
 
   /**
