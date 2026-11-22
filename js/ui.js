@@ -209,18 +209,46 @@
     activeAnimationId = requestAnimationFrame(frame);
   }
 
-  // Limpa erros ao digitar
-  inputPeso.addEventListener("input", function () {
-    if (fieldPeso.classList.contains("has-error")) {
-      clearFieldError(fieldPeso, errorPeso, inputPeso);
-    }
-  });
+  // Limpa erros ao digitar e bloqueia a digitação de letras nos campos
+  function preventLetterInput(inputEl, fieldEl, errorEl) {
+    // Bloqueia teclas de letras no momento em que são pressionadas
+    inputEl.addEventListener("keydown", function (event) {
+      if (event.ctrlKey || event.metaKey || event.altKey) {
+        return;
+      }
+      if (event.key.length === 1 && /\p{L}/u.test(event.key)) {
+        event.preventDefault();
+      }
+    });
 
-  inputAltura.addEventListener("input", function () {
-    if (fieldAltura.classList.contains("has-error")) {
-      clearFieldError(fieldAltura, errorAltura, inputAltura);
-    }
-  });
+    // Bloqueia inserção de letras via IME, teclado virtual mobile ou colagem
+    inputEl.addEventListener("beforeinput", function (event) {
+      if (typeof event.data === "string" && /\p{L}/u.test(event.data)) {
+        event.preventDefault();
+      }
+    });
+
+    // Fallback de sanitização caso alguma letra seja inserida e limpeza do estado de erro
+    inputEl.addEventListener("input", function () {
+      if (/\p{L}/u.test(inputEl.value)) {
+        const cursor = inputEl.selectionStart;
+        const cleaned = inputEl.value.replace(/\p{L}+/gu, "");
+        const diff = inputEl.value.length - cleaned.length;
+        inputEl.value = cleaned;
+        if (typeof cursor === "number") {
+          const newPos = Math.max(0, cursor - diff);
+          inputEl.setSelectionRange(newPos, newPos);
+        }
+      }
+
+      if (fieldEl.classList.contains("has-error")) {
+        clearFieldError(fieldEl, errorEl, inputEl);
+      }
+    });
+  }
+
+  preventLetterInput(inputPeso, fieldPeso, errorPeso);
+  preventLetterInput(inputAltura, fieldAltura, errorAltura);
 
   /**
    * Submissão do Formulário integrada a calcularIMC(peso, altura) de js/script.js
